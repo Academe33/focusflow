@@ -377,7 +377,7 @@ function moveCard(e, id, newStatus) {
   var t = tasks.find(function(x) { return x.id === id; });
   if (!t) return;
   var updated = Object.assign({}, t, {status: newStatus});
-  apiPut(T + '/' + id, updated).then(loadTasks).catch(function(err) {
+  apiPut(T + '?id=' + id, updated).then(loadTasks).catch(function(err) {
     alert('Erro ao mover: ' + err.message);
   });
 }
@@ -428,7 +428,7 @@ function saveTask() {
     status:      document.getElementById('fStatus').value,
     due_date:    document.getElementById('fDue').value || null
   };
-  var p = editId ? apiPut(T + '/' + editId, data) : apiPost(T, data);
+  var p = editId ? apiPut(T + '?id=' + editId, data) : apiPost(T, data);
   p.then(function() { closeTask(); loadTasks(); })
    .catch(function(err) { alert('Erro ao salvar: ' + err.message); });
 }
@@ -437,7 +437,7 @@ function doDelete(e, id) {
   e.stopPropagation();
   showConfirm('Excluir tarefa?', 'Essa ação não pode ser desfeita.').then(function(ok) {
     if (!ok) return;
-    apiDel(T + '/' + id).then(loadTasks).catch(function(err) {
+    apiDel(T + '?id=' + id).then(loadTasks).catch(function(err) {
       alert('Erro ao excluir: ' + err.message);
     });
   });
@@ -515,7 +515,7 @@ function saveFoco() {
     periodo_label: document.getElementById('foLabel').value.trim(),
     concluido:     false
   };
-  var p = focoExId ? apiPut(O + '/' + focoExId, data) : apiPost(O, data);
+  var p = focoExId ? apiPut(O + '?id=' + focoExId, data) : apiPost(O, data);
   p.then(function() { closeFoco(); loadFoco(); })
    .catch(function(err) { alert('Erro ao salvar: ' + err.message); });
 }
@@ -523,7 +523,7 @@ function saveFoco() {
 function toggleObj(key) {
   var obj = objetivos[key];
   if (!obj) return;
-  apiPut(O + '/' + obj.id, Object.assign({}, obj, {concluido: !obj.concluido})).then(loadFoco);
+  apiPut(O + '?id=' + obj.id, Object.assign({}, obj, {concluido: !obj.concluido})).then(loadFoco);
 }
 
 /* ============ UTILS ============ */
