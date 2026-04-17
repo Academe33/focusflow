@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FocusFlow</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#2d7dd2;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#2d7dd2;padding:12px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.12)}
+.logo{font-size:17px;font-weight:800;color:#fff}
+.tabs{display:flex;gap:3px;background:rgba(0,0,0,0.18);border-radius:10px;padding:3px;margin-left:8px}
+.tab{background:transparent;color:rgba(255,255,255,0.7);border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.tab.active,.tab:hover{background:rgba(255,255,255,0.22);color:#fff}
+.ml{margin-left:auto}
+.btn-new{background:rgba(255,255,255,0.2);color:#fff;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700}
+.btn-new:hover{background:rgba(255,255,255,0.32)}
+#viewKanban{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.board{flex:1;display:flex;gap:12px;padding:12px 12px 16px;overflow-x:auto;align-items:flex-start}
+.col{background:#f1f2f4;border-radius:14px;width:280px;min-width:260px;display:flex;flex-direction:column;max-height:calc(100vh - 110px)}
+.col-hd{padding:12px 14px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.col-title{font-weight:700;font-size:14px;color:#172b4d}
+.col-cnt{background:#e2e4e9;border-radius:20px;padding:1px 8px;font-size:12px;color:#626f86}
+.cards{flex:1;overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column;gap:7px;min-height:40px}
+.card{background:#fff;border-radius:10px;padding:11px 12px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.card-bar{height:4px;border-radius:2px;margin-bottom:8px}
+.card-title{font-size:13px;font-weight:600;color:#172b4d;line-height:1.35;margin-bottom:5px}
+.card-desc{font-size:11px;color:#626f86;line-height:1.4;margin-bottom:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-foot{display:flex;align-items:center;justify-content:space-between}
+.card-due{font-size:11px;color:#94a3b8}
+.card-due.ov{color:#ef4444}
+.card-del{background:none;border:none;cursor:pointer;color:#d1d5db;font-size:13px;padding:2px 4px}
+.card-del:hover{color:#ef4444}
+.add-card{background:none;border:none;cursor:pointer;padding:10px 14px;text-align:left;color:#626f86;font-size:13px;font-weight:500;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.add-card:hover{color:#172b4d}
+.drag-over .cards{background:#dbeafe;border-radius:10px}
+#viewFoco{display:none;flex:1;overflow-y:auto;padding:24px 16px 48px;background:#0f172a}
+.foco-inner{max-width:600px;margin:0 auto}
+.foco-title{text-align:center;margin-bottom:28px}
+.foco-title h2{font-size:22px;font-weight:800;color:#f8fafc}
+.foco-title p{font-size:13px;color:#475569;margin-top:6px}
+.foco-card{border-radius:14px;padding:18px 20px;margin-bottom:12px}
+.fc-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.fc-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.fc-sub{font-size:11px;color:#475569;margin-top:1px}
+.fc-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+.fc-check{border-radius:50%;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1.5px solid;flex-shrink:0;background:transparent}
+.fc-edit{background:none;border:none;cursor:pointer;color:#334155;font-size:14px;padding:2px 4px}
+.fc-text{font-size:13px;font-weight:500;color:#cbd5e1;line-height:1.55}
+.fc-text.dia{font-size:16px;font-weight:700}
+.fc-text.done{color:#334155;text-decoration:line-through}
+.fc-empty{background:none;border:1px dashed;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;width:100%;text-align:left;color:#475569}
+.fc-arrow{text-align:center;margin-top:12px;font-size:11px;color:#1e3a5f;letter-spacing:1px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:26px;width:460px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.modal.dark{background:#1e293b;border:1px solid #334155}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:18px;color:#172b4d}
+.modal.dark h3{color:#f8fafc}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:12px;color:#626f86;margin-bottom:4px}
+.modal.dark .fg label{color:#64748b}
+.fi{width:100%;background:#f7f8f9;border:1px solid #dfe1e6;border-radius:9px;padding:9px 13px;color:#172b4d;font-size:14px;font-family:inherit;outline:none}
+.modal.dark .fi{background:#0f172a;border-color:#334155;color:#e2e8f0}
+.fi:focus{border-color:#3b82f6}
+textarea.fi{min-height:70px;resize:vertical}
+.row2{display:flex;gap:10px}
+.row2>div{flex:1}
+.mfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.btn-cancel{background:#f1f2f4;color:#626f86;border:none;padding:8px 18px;border-radius:9px;cursor:pointer;font-size:14px}
+.modal.dark .btn-cancel{background:transparent;color:#64748b;border:1px solid #334155}
+.btn-save{color:#fff;border:none;padding:8px 22px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:700;background:#2d7dd2}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">⚡ FocusFlow</span>
+  <div class="tabs">
+    <button class="tab active" id="tabK" onclick="showView('kanban')">📋 Kanban</button>
+    <button class="tab" id="tabF" onclick="showView('foco')">🎯 Foco</button>
+  </div>
+  <div class="ml">
+    <button class="btn-new" id="btnNew" onclick="openNewTask()">+ Tarefa</button>
+  </div>
+</div>
+
+<div id="viewKanban">
+  <div class="board" id="board">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:15px">
+      <span class="spinner" style="margin-right:10px"></span> Carregando...
+    </div>
+  </div>
+</div>
+
+<div id="viewFoco">
+  <div class="foco-inner">
+    <div class="foco-title"><h2>O que importa agora?</h2><p>Cada ação de hoje constrói o seu ano</p></div>
+    <div id="focoCards"><div style="text-align:center;color:#475569;padding:40px"><span class="spinner"></span></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayTask">
+  <div class="modal">
+    <h3 id="modalTitle">Nova Tarefa</h3>
+    <div class="fg"><label>TÍTULO *</label><input class="fi" id="fTitle" type="text" placeholder="O que precisa ser feito?"/></div>
+    <div class="fg"><label>DESCRIÇÃO</label><textarea class="fi" id="fDesc" placeholder="Detalhes..."></textarea></div>
+    <div class="row2">
+      <div class="fg"><label>PRIORIDADE</label>
+        <select class="fi" id="fPri"><option value="high">Alta</option><option value="medium" selected>Média</option><option value="low">Baixa</option></select>
+      </div>
+      <div class="fg"><label>STATUS</label>
+        <select class="fi" id="fStatus"><option value="pending">A Fazer</option><option value="in_progress">Em Andamento</option><option value="done">Concluído</option></select>
+      </div>
+    </div>
+    <div class="fg"><label>PRAZO</label><input class="fi" id="fDue" type="date"/></div>
+    <div class="mfoot">
+      <button class="btn-cancel" onclick="closeTask()">Cancelar</button>
+      <button class="btn-save" id="saveBtn" onclick="saveTask()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlayFoco">
+  <div class="modal dark">
+    <h3 id="focoTitle">Objetivo</h3>
+    <div class="fg"><label>PERÍODO</label><input class="fi" id="foLabel" type="text" placeholder="Ex: Abril 2026"/></div>
+    <div class="fg"><label>OBJETIVO</label><textarea class="fi" id="foTexto" rows="4" placeholder="Descreva o objetivo..."></textarea></div>
+    <div class="mfoot">
+      <button class="btn-cancel" onclick="closeFoco()">Cancelar</button>
+      <button class="btn-save" id="foSaveBtn" onclick="saveFoco()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var T = 'https://nina-cd7d5ae9.base44.app/functions/tasks';
+var O = 'https://nina-cd7d5ae9.base44.app/functions/objetivos';
+var tasks=[], objList=[], objetivos={};
+var editId=null, focoKey=null, focoExId=null, dragId=null;
+var PC={high:'#ef4444',medium:'#f59e0b',low:'#a855f7'};
+var MO=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+var NV=[
+  {k:'ano',   l:'OBJETIVO DO ANO',    s:'A grande missão',                       i:'🏆',c:'#f59e0b',bg:'rgba(245,158,11,.08)',bd:'rgba(245,158,11,.3)'},
+  {k:'mes',   l:'OBJETIVO DO MÊS',    s:'O que precisa acontecer este mês',      i:'📅',c:'#3b82f6',bg:'rgba(59,130,246,.08)',bd:'rgba(59,130,246,.3)'},
+  {k:'semana',l:'OBJETIVO DA SEMANA', s:'A entrega mais importante desta semana',i:'🎯',c:'#8b5cf6',bg:'rgba(139,92,246,.08)',bd:'rgba(139,92,246,.3)'},
+  {k:'dia',   l:'FOCO DO DIA',        s:'A única coisa que importa hoje',        i:'⚡',c:'#10b981',bg:'rgba(16,185,129,.10)',bd:'rgba(16,185,129,.4)'},
+];
+
+function get(u){return fetch(u).then(function(r){return r.json();})}
+function post(u,d){return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();})}
+function put(u,d){return fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json();})}
+function del(u){return fetch(u,{method:'DELETE'}).then(function(r){return r.json();})}
+
+function showView(v){
+  document.getElementById('viewKanban').style.display=v==='kanban'?'flex':'none';
+  document.getElementById('viewFoco').style.display=v==='foco'?'flex':'none';
+  document.getElementById('tabK').className='tab'+(v==='kanban'?' active':'');
+  document.getElementById('tabF').className='tab'+(v==='foco'?' active':'');
+  document.getElementById('btnNew').style.display=v==='kanban'?'':'none';
+  if(v==='foco')loadFoco();
+}
+
+function loadTasks(){
+  get(T).then(function(d){tasks=Array.isArray(d)?d:[];renderBoard();}).catch(function(e){
+    document.getElementById('board').innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#f87171">Erro: '+e.message+'</div>';
+  });
+}
+
+function renderBoard(){
+  var cols={pending:[],in_progress:[],done:[]};
+  tasks.forEach(function(t){var s=t.status||'pending';if(cols[s])cols[s].push(t);});
+  var defs=[{k:'pending',l:'A Fazer'},{k:'in_progress',l:'Em Andamento'},{k:'done',l:'Concluído'}];
+  document.getElementById('board').innerHTML=defs.map(function(col){
+    var list=cols[col.k];
+    return '<div class="col" id="col-'+col.k+'" ondragover="ev(event)" ondragleave="dl(event)" ondrop="dp(event,\''+col.k+'\')">'+
+      '<div class="col-hd"><span class="col-title">'+col.l+'</span><span class="col-cnt">'+list.length+'</span></div>'+
+      '<div class="cards">'+
+        (list.length===0?'<div style="text-align:center;padding:20px;font-size:12px;color:#94a3b8">Vazio</div>':list.map(ch).join(''))+
+      '</div>'+
+      '<button class="add-card" onclick="openNewTask(\''+col.k+'\')">+ Adicionar cartão</button>'+
+    '</div>';
+  }).join('');
+  document.querySelectorAll('.card').forEach(function(c){
+    c.ondragstart=function(){dragId=c.dataset.id;setTimeout(function(){c.style.opacity='.3';},0);};
+    c.ondragend=function(){c.style.opacity='1';};
+    c.onclick=function(e){if(e.target.closest('.card-del'))return;openEdit(c.dataset.id);};
+  });
+  document.querySelectorAll('.card-del').forEach(function(b){
+    b.onclick=function(e){e.stopPropagation();doDelete(b.dataset.id);};
+  });
+}
+
+function ch(t){
+  var today=new Date().toISOString().split('T')[0];
+  var ov=t.due_date&&t.due_date<today&&t.status!=='done';
+  var ds='';if(t.due_date){var dt=new Date(t.due_date+'T00:00:00');ds=dt.getDate()+' '+MO[dt.getMonth()];}
+  return '<div class="card" draggable="true" data-id="'+t.id+'">'+
+    '<div class="card-bar" style="background:'+(PC[t.priority]||'#3b82f6')+'"></div>'+
+    '<div class="card-title">'+esc(t.title)+'</div>'+
+    (t.description?'<div class="card-desc">'+esc(t.description)+'</div>':'')+
+    '<div class="card-foot">'+(ds?'<span class="card-due'+(ov?' ov':'')+'">📅 '+ds+'</span>':'<span></span>')+
+    '<button class="card-del" data-id="'+t.id+'">🗑</button></div></div>';
+}
+
+function ev(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function dl(e){e.currentTarget.classList.remove('drag-over');}
+function dp(e,s){
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragId)return;
+  var t=tasks.find(function(x){return x.id===dragId;});
+  if(t&&t.status!==s){put(T+'/'+dragId,Object.assign({},t,{status:s})).then(loadTasks);}
+  dragId=null;
+}
+
+function openNewTask(status){
+  editId=null;
+  document.getElementById('modalTitle').textContent='Nova Tarefa';
+  document.getElementById('fTitle').value='';
+  document.getElementById('fDesc').value='';
+  document.getElementById('fPri').value='medium';
+  document.getElementById('fStatus').value=status||'pending';
+  document.getElementById('fDue').value='';
+  document.getElementById('overlayTask').classList.add('open');
+  setTimeout(function(){document.getElementById('fTitle').focus();},80);
+}
+function openEdit(id){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  editId=id;
+  document.getElementById('modalTitle').textContent='Editar Tarefa';
+  document.getElementById('fTitle').value=t.title||'';
+  document.getElementById('fDesc').value=t.description||'';
+  document.getElementById('fPri').value=t.priority||'medium';
+  document.getElementById('fStatus').value=t.status||'pending';
+  document.getElementById('fDue').value=t.due_date||'';
+  document.getElementById('overlayTask').classList.add('open');
+}
+function closeTask(){document.getElementById('overlayTask').classList.remove('open');}
+function saveTask(){
+  var title=document.getElementById('fTitle').value.trim();
+  if(!title){alert('Título obrigatório');return;}
+  var data={title:title,description:document.getElementById('fDesc').value,priority:document.getElementById('fPri').value,status:document.getElementById('fStatus').value,due_date:document.getElementById('fDue').value||null};
+  var p=editId?put(T+'/'+editId,data):post(T,data);
+  p.then(function(){closeTask();loadTasks();});
+}
+function doDelete(id){
+  if(!confirm('Excluir?'))return;
+  del(T+'/'+id).then(loadTasks);
+}
+
+function loadFoco(){
+  get(O).then(function(d){
+    objList=Array.isArray(d)?d:[];
+    var map={};
+    NV.forEach(function(n){
+      var f=objList.filter(function(o){return o.nivel===n.k;}).sort(function(a,b){return new Date(b.created_date)-new Date(a.created_date);});
+      map[n.k]=f[0]||null;
+    });
+    objetivos=map;
+    renderFoco();
+  });
+}
+function renderFoco(){
+  var ww=['100%','91%','83%','75%'];
+  document.getElementById('focoCards').innerHTML=NV.map(function(n,i){
+    var obj=objetivos[n.k],done=obj&&obj.concluido;
+    return '<div style="display:flex;justify-content:center">'+
+      '<div class="foco-card" style="width:'+ww[i]+';background:'+n.bg+';border:1.5px solid '+n.bd+'">'+
+        '<div class="fc-head">'+
+          '<span style="font-size:18px">'+n.i+'</span>'+
+          '<div><div class="fc-label" style="color:'+n.c+'">'+n.l+'</div>'+
+          '<div class="fc-sub">'+(obj&&obj.periodo_label?obj.periodo_label:n.s)+'</div></div>'+
+          '<div class="fc-actions">'+
+            (obj?'<button class="fc-check" style="border-color:'+n.c+';background:'+(done?n.c:'transparent')+';color:'+(done?'#fff':n.c)+'" onclick="toggleObj(\''+n.k+'\')">'+(done?'✓':'')+'</button>':'')+
+            '<button class="fc-edit" onclick="openFocoEdit(\''+n.k+'\')">✏️</button>'+
+          '</div></div>'+
+        (obj&&obj.texto?'<div class="fc-text'+(i===3?' dia':'')+(done?' done':'')+'">'+esc(obj.texto)+'</div>':
+          '<button class="fc-empty" style="border-color:'+n.bd+'" onclick="openFocoEdit(\''+n.k+'\')">+ Definir '+n.l.toLowerCase()+'...</button>')+
+        (i<3?'<div class="fc-arrow">↓ alimenta isso</div>':'')+
+      '</div></div>';
+  }).join('');
+}
+function openFocoEdit(key){
+  var n=NV.find(function(x){return x.k===key;});
+  var obj=objetivos[key];
+  focoKey=key;focoExId=obj?obj.id:null;
+  document.getElementById('focoTitle').textContent=n.l;
+  document.getElementById('foLabel').value=obj&&obj.periodo_label?obj.periodo_label:'';
+  document.getElementById('foTexto').value=obj&&obj.texto?obj.texto:'';
+  document.getElementById('foSaveBtn').style.background=n.c;
+  document.getElementById('overlayFoco').classList.add('open');
+  setTimeout(function(){document.getElementById('foTexto').focus();},80);
+}
+function closeFoco(){document.getElementById('overlayFoco').classList.remove('open');}
+function saveFoco(){
+  var texto=document.getElementById('foTexto').value.trim();if(!texto)return;
+  var data={nivel:focoKey,texto:texto,periodo_label:document.getElementById('foLabel').value,concluido:false};
+  var p=focoExId?put(O+'/'+focoExId,data):post(O,data);
+  p.then(function(){closeFoco();loadFoco();});
+}
+function toggleObj(key){
+  var obj=objetivos[key];if(!obj)return;
+  put(O+'/'+obj.id,Object.assign({},obj,{concluido:!obj.concluido})).then(loadFoco);
+}
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+document.getElementById('overlayTask').onclick=function(e){if(e.target===this)closeTask();};
+document.getElementById('overlayFoco').onclick=function(e){if(e.target===this)closeFoco();};
+loadTasks();
+</script>
+</body>
+</html>
